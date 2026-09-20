@@ -54,16 +54,25 @@ export function verifyAdminPassword(pwd: string): boolean {
 }
 
 export function getSavedPortfolioItems(): PortfolioItem[] {
-  try {
-    const saved = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+  const possibleKeys = [
+    PORTFOLIO_STORAGE_KEY,
+    'ashaduzzaman_portfolio_items',
+    'portfolio_items',
+    'portfolio_items_v1',
+  ];
+
+  for (const key of possibleKeys) {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       }
+    } catch {
+      // try next key
     }
-  } catch (err) {
-    console.error('Failed to load portfolio items from localStorage:', err);
   }
   return initialPortfolioItems;
 }
@@ -114,7 +123,27 @@ export async function fetchPortfolioData(): Promise<{ items: PortfolioItem[]; pr
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data.items)) {
-        savePortfolioItems(data.items);
+        const local = getSavedPortfolioItems();
+        const localCustoms = local.filter(
+          (it) =>
+            it.isCustom === true ||
+            (typeof it.id === 'string' && it.id.startsWith('custom')) ||
+            Boolean(it.customTitle) ||
+            !initialPortfolioItems.some((init) => init.id === it.id)
+        );
+
+        // If local had custom items that aren't yet in server data, keep them merged
+        if (localCustoms.length > 0) {
+          const merged = [...data.items];
+          for (const cIt of localCustoms) {
+            if (!merged.some((m) => m.id === cIt.id)) {
+              merged.unshift(cIt);
+            }
+          }
+          savePortfolioItems(merged);
+        } else {
+          savePortfolioItems(data.items);
+        }
       }
       if (data.profileImage) {
         saveProfileImage(data.profileImage);
@@ -189,7 +218,13 @@ export async function syncLocalToServer(): Promise<{ items: PortfolioItem[]; pro
   try {
     const localItems = getSavedPortfolioItems();
     const localProfileImage = getSavedProfileImage();
-    const hasCustom = localItems.some((it) => it.isCustom);
+    const hasCustom = localItems.some(
+      (it) =>
+        it.isCustom === true ||
+        (typeof it.id === 'string' && it.id.startsWith('custom')) ||
+        Boolean(it.customTitle) ||
+        !initialPortfolioItems.some((init) => init.id === it.id)
+    );
     const hasCustomProfile = localProfileImage !== DEFAULT_PROFILE_IMAGE;
 
     if (!hasCustom && !hasCustomProfile) {

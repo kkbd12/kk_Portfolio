@@ -17,6 +17,12 @@ import {
   syncLocalToServer,
   resetPortfolioRemote,
 } from './utils/storage';
+import {
+  subscribeToPortfolio,
+  savePortfolioItemToFirestore,
+  deletePortfolioItemFromFirestore,
+  saveProfileImageToFirestore,
+} from './lib/firebase';
 
 import { LanguageSelector } from './components/LanguageSelector';
 import { Header } from './components/Header';
@@ -81,31 +87,52 @@ export default function App() {
     document.title = t('appTitle') || 'Md. Ashaduzzaman Portfolio';
   }, [language, t]);
 
-  // Load from remote server and auto-sync any photos previously saved in localStorage
+  // Real-time synchronization with Firebase Firestore & auto-sync from localStorage
   useEffect(() => {
     let isMounted = true;
+
+    // 1. Subscribe to real-time changes in Firestore (works on Google Sites, Netlify, mobile, everywhere!)
+    const unsubscribe = subscribeToPortfolio((data) => {
+      if (!isMounted) return;
+      if (Array.isArray(data.items) && data.items.length > 0) {
+        setItems(data.items);
+        savePortfolioItems(data.items);
+      }
+      if (data.profileImage) {
+        setProfileImage(data.profileImage);
+        saveProfileImage(data.profileImage);
+      }
+    });
+
+    // 2. Also check if this browser has any existing local custom photos and push them to Firestore
     (async () => {
       try {
-        // First, check if this browser has any custom photos in localStorage and auto-sync them to server
-        const synced = await syncLocalToServer();
-        if (synced && isMounted && Array.isArray(synced.items) && synced.items.length > 0) {
-          setItems(synced.items);
-          if (synced.profileImage) setProfileImage(synced.profileImage);
-          return;
+        const local = getSavedPortfolioItems();
+        const customItems = local.filter(
+          (it) =>
+            it.isCustom === true ||
+            (typeof it.id === 'string' && it.id.startsWith('custom')) ||
+            Boolean(it.customTitle)
+        );
+        for (const cIt of customItems) {
+          await savePortfolioItemToFirestore(cIt);
         }
 
-        // Otherwise fetch latest data from server
-        const remoteData = await fetchPortfolioData();
-        if (remoteData && isMounted && Array.isArray(remoteData.items) && remoteData.items.length > 0) {
-          setItems(remoteData.items);
-          if (remoteData.profileImage) setProfileImage(remoteData.profileImage);
+        const localProfile = getSavedProfileImage();
+        if (localProfile && !localProfile.includes('imgur.com/gUf0IdJ.jpeg')) {
+          await saveProfileImageToFirestore(localProfile);
         }
+
+        // Also notify backend server if running
+        await syncLocalToServer();
       } catch (err) {
-        console.warn('Backend sync note:', err);
+        console.warn('Initial sync notice:', err);
       }
     })();
+
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, []);
 
@@ -153,11 +180,11 @@ export default function App() {
     saveProfileImage(newUrl);
     showToast(t('profilePhotoSaved') || 'প্রোফাইল ছবি সফলভাবে আপডেট হয়েছে!');
 
-    // Persist to server so other devices see the new profile photo
-    const serverPhoto = await saveProfileImageRemote(newUrl);
-    if (serverPhoto) {
-      setProfileImage(serverPhoto);
-    }
+    // 1. Save to Firebase Firestore (Netlify & Google Sites update globally in real-time)
+    await saveProfileImageToFirestore(newUrl);
+
+    // 2. Also save to server if available
+    await saveProfileImageRemote(newUrl);
   };
 
   // Add new portfolio photo
@@ -168,12 +195,14 @@ export default function App() {
     savePortfolioItems(updated);
     showToast(t('photoSavedSuccess') || 'নতুন কাজের ছবি সফলভাবে যুক্ত হয়েছে!');
 
-    // 2. Persist to server backend so it is permanently visible from ANY device/browser
-    const serverItems = await addPortfolioItemRemote(newItem);
-    if (serverItems) {
-      setItems(serverItems);
-      showToast('ছবিটি ক্লাউড সার্ভারে সংরক্ষিত হয়েছে, এখন সারা বিশ্ব থেকে দৃশ্যমান!');
+    // 2. Save directly to Firebase Firestore (instantly visible on Netlify, Google Sites & every device worldwide)
+    const firestoreOk = await savePortfolioItemToFirestore(newItem);
+    if (firestoreOk) {
+      showToast('ছবিটি ক্লাউড ডেটাবেসে (Firebase) স্থায়ীভাবে সংরক্ষিত হয়েছে!');
     }
+
+    // 3. Backup to server backend
+    await addPortfolioItemRemote(newItem);
   };
 
   // Delete custom photo (Admin only)
@@ -194,11 +223,11 @@ export default function App() {
     savePortfolioItems(updated);
     showToast('ছবি মুছে ফেলা হয়েছে।');
 
-    // Delete on server
-    const serverItems = await deletePortfolioItemRemote(id);
-    if (serverItems) {
-      setItems(serverItems);
-    }
+    // 1. Delete from Firebase Firestore
+    await deletePortfolioItemFromFirestore(id);
+
+    // 2. Delete on server backend
+    await deletePortfolioItemRemote(id);
   };
 
   // Reset to default gallery

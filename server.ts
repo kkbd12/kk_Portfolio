@@ -85,17 +85,28 @@ function writeDb(data: DBData): void {
 
 // Convert base64 data to static file in /uploads
 function saveBase64Image(dataUri: string, prefix = 'photo'): string {
-  if (!dataUri || !dataUri.startsWith('data:image/')) {
+  if (!dataUri || typeof dataUri !== 'string' || !dataUri.startsWith('data:image/')) {
     return dataUri;
   }
 
   try {
-    const matches = dataUri.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
-    if (!matches || matches.length < 3) return dataUri;
+    const commaIndex = dataUri.indexOf(',');
+    if (commaIndex === -1) return dataUri;
 
-    const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
-    const base64Data = matches[2];
-    const buffer = Buffer.from(base64Data, 'base64');
+    const header = dataUri.substring(0, commaIndex);
+    const base64Data = dataUri.substring(commaIndex + 1);
+
+    let ext = 'jpg';
+    const mimeMatch = header.match(/data:image\/([a-zA-Z0-9+]+)/);
+    if (mimeMatch && mimeMatch[1]) {
+      const rawExt = mimeMatch[1].toLowerCase();
+      if (rawExt === 'jpeg' || rawExt === 'jpg') ext = 'jpg';
+      else if (rawExt === 'png') ext = 'png';
+      else if (rawExt === 'webp') ext = 'webp';
+      else if (rawExt === 'gif') ext = 'gif';
+    }
+
+    const buffer = Buffer.from(base64Data.trim(), 'base64');
     const filename = `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
     const filePath = path.join(UPLOADS_DIR, filename);
 
@@ -207,14 +218,22 @@ async function startServer() {
 
       if (Array.isArray(localItems)) {
         for (const it of localItems) {
-          if (it.isCustom && !db.items.some((existing) => existing.id === it.id)) {
+          const isUserItem =
+            it.isCustom === true ||
+            (typeof it.id === 'string' && it.id.startsWith('custom')) ||
+            Boolean(it.customTitle) ||
+            !initialPortfolioItems.some((init) => init.id === it.id);
+
+          if (isUserItem && !db.items.some((existing) => existing.id === it.id)) {
             let processedSrc = it.imageSrc;
             if (processedSrc && processedSrc.startsWith('data:image/')) {
               processedSrc = saveBase64Image(processedSrc, 'sync_photo');
             }
             db.items.unshift({
               ...it,
+              id: it.id || `custom_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
               imageSrc: processedSrc,
+              isCustom: true,
             });
             modified = true;
           }

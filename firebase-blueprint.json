@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "PortfolioItem": {
+      "title": "PortfolioItem",
+      "description": "A single photo item in Md. Ashaduzzaman's portfolio gallery.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "imageSrc": { "type": "string" },
+        "customTitle": { "type": "string" },
+        "customDescription": { "type": "string" },
+        "category": { "type": "string" },
+        "date": { "type": "string" },
+        "isCustom": { "type": "boolean" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["imageSrc"]
+    },
+    "AppSettings": {
+      "title": "AppSettings",
+      "description": "Global settings such as profile image.",
+      "type": "object",
+      "properties": {
+        "profileImage": { "type": "string" },
+        "updatedAt": { "type": "number" }
+      }
+    }
+  },
+  "firestore": {
+    "/portfolioItems/{itemId}": {
+      "schema": "PortfolioItem",
+      "description": "Stores portfolio photos and work showcase items"
+    },
+    "/appSettings/{settingId}": {
+      "schema": "AppSettings",
+      "description": "Stores app-wide settings like profile avatar"
+    }
+  }
+}
