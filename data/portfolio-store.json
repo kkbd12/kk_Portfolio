@@ -1,0 +1,110 @@
+{
+  "items": [
+    {
+      "id": "fish",
+      "imageSrc": "https://i.imgur.com/pwdaI0K.jpeg",
+      "titleKey": "cardFishTitle",
+      "category": "মৎস্য উদ্যোগ",
+      "date": "2022 - বর্তমান"
+    },
+    {
+      "id": "herdsman",
+      "imageSrc": "https://i.imgur.com/gUf0IdJ.jpeg",
+      "titleKey": "cardHerdsmanTitle",
+      "category": "পশুপালন",
+      "date": "২০১৮ - বর্তমান"
+    },
+    {
+      "id": "cattle",
+      "imageSrc": "https://i.imgur.com/0BRpQFR.jpeg",
+      "titleKey": "cardCattleTitle",
+      "category": "গরু ব্যবসা",
+      "date": "২০১৯ - বর্তমান"
+    },
+    {
+      "id": "livestock",
+      "imageSrc": "https://i.imgur.com/7wk32QN.jpeg",
+      "titleKey": "cardLivestockTitle",
+      "category": "গবাদি পশু পালন",
+      "date": "২০১৭ - বর্তমান"
+    },
+    {
+      "id": "fundraising",
+      "imageSrc": "https://i.imgur.com/UC9VkNC.jpeg",
+      "titleKey": "cardFundraisingTitle",
+      "category": "সমাজসেবা",
+      "date": "২০১৫ - বর্তমান"
+    },
+    {
+      "id": "phuchka",
+      "imageSrc": "https://i.imgur.com/ZejPDtf.jpeg",
+      "titleKey": "cardPhuchkaTitle",
+      "category": "ব্যবসা ও খাদ্য",
+      "date": "২০১৬ - বর্তমান"
+    },
+    {
+      "id": "social_participant",
+      "imageSrc": "https://i.imgur.com/L9l8Qv7.jpeg",
+      "titleKey": "cardSocialTitle",
+      "category": "সামাজিক কর্মকাণ্ড",
+      "date": "২০১৪ - বর্তমান"
+    },
+    {
+      "id": "agricultural_worker",
+      "imageSrc": "https://i.imgur.com/BdDhKLV.jpeg",
+      "titleKey": "cardAgriculturalTitle",
+      "category": "কৃষি কাজ",
+      "date": "২০১২ - বর্তমান"
+    },
+    {
+      "id": "carpenter",
+      "imageSrc": "https://i.imgur.com/Z4gV5os.jpeg",
+      "titleKey": "cardCarpenterTitle",
+      "category": "কাঠ মিস্ত্রি",
+      "date": "২০১৩ - বর্তমান"
+    },
+    {
+      "id": "farmer",
+      "imageSrc": "https://i.imgur.com/hhxJcpc.jpeg",
+      "titleKey": "cardFarmerTitle",
+      "category": "কৃষক",
+      "date": "২০১০ - বর্তমান"
+    },
+    {
+      "id": "construction_labour",
+      "imageSrc": "https://i.imgur.com/bDFzOCF.jpeg",
+      "titleKey": "cardConstructionTitle",
+      "category": "নির্মাণ শ্রমিক",
+      "date": "২০১১ - ২০১৬"
+    },
+    {
+      "id": "bus_contractor",
+      "imageSrc": "https://i.imgur.com/BXrs4nD.jpeg",
+      "titleKey": "cardBusContractorTitle",
+      "category": "বাস কনট্রাক্টর",
+      "date": "২০১৪ - ২০১৮"
+    },
+    {
+      "id": "potter",
+      "imageSrc": "https://i.imgur.com/gN2HsMG.jpeg",
+      "titleKey": "cardPotterTitle",
+      "category": "মৃৎশিল্প ও হস্তশিল্প",
+      "date": "২০১৬ - বর্তমান"
+    },
+    {
+      "id": "egg_seller",
+      "imageSrc": "https://i.imgur.com/SJiM1zw.jpeg",
+      "titleKey": "cardEggSellerTitle",
+      "category": "ডিম বিক্রেতা ও খামার",
+      "date": "২০১৮ - বর্তমান"
+    },
+    {
+      "id": "writer",
+      "imageSrc": "https://i.imgur.com/3o67pf0.jpeg",
+      "titleKey": "cardWriterTitle",
+      "category": "সাহিত্য ও ব্লগিং",
+      "date": "২০১৫ - বর্তমান"
+    }
+  ],
+  "profileImage": "https://i.imgur.com/Ml4A0jp.jpeg"
+}

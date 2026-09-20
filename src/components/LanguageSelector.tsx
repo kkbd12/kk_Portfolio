@@ -1,6 +1,6 @@
 import React from 'react';
 import { Language } from '../types';
-import { Globe, PlusCircle, Lock, Share2 } from 'lucide-react';
+import { Globe, PlusCircle, Lock } from 'lucide-react';
 
 interface LanguageSelectorProps {
   currentLang: Language;
@@ -9,7 +9,6 @@ interface LanguageSelectorProps {
   uploadButtonText: string;
   isAdmin?: boolean;
   onOpenAdminLogin?: () => void;
-  onOpenShare?: () => void;
 }
 
 const languages: { code: Language; label: string; flag: string }[] = [
@@ -24,7 +23,6 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   uploadButtonText,
   isAdmin = false,
   onOpenAdminLogin,
-  onOpenShare,
 }) => {
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2 border-b border-slate-200">
@@ -56,18 +54,6 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       </div>
 
       <div className="flex items-center gap-2.5">
-        {onOpenShare && (
-          <button
-            id="share-publish-header-btn"
-            onClick={onOpenShare}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 rounded-xl shadow-2xs transition cursor-pointer active:scale-95"
-            title="পোর্টফোলিও লিংক কপি ও সবার মাঝে শেয়ার করুন"
-          >
-            <Share2 className="w-3.5 h-3.5 text-red-600" />
-            <span>শেয়ার ও প্রকাশ</span>
-          </button>
-        )}
-
         {!isAdmin && onOpenAdminLogin && (
           <button
             id="admin-login-header-btn"

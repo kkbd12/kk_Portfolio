@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Image as ImageIcon, Briefcase, Sparkles, Mail, Lock, Share2 } from 'lucide-react';
+import { Camera, Image as ImageIcon, Briefcase, Sparkles, Mail, Lock } from 'lucide-react';
 
 interface HeaderProps {
   name: string;
@@ -11,7 +11,6 @@ interface HeaderProps {
   totalPhotos: number;
   uploadButtonText: string;
   isAdmin?: boolean;
-  onOpenShare?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -24,7 +23,6 @@ export const Header: React.FC<HeaderProps> = ({
   totalPhotos,
   uploadButtonText,
   isAdmin = false,
-  onOpenShare,
 }) => {
   return (
     <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-50 via-indigo-50/40 to-slate-50 border border-slate-200/80 shadow-md p-6 sm:p-10 text-center transition-all">
@@ -130,18 +128,6 @@ export const Header: React.FC<HeaderProps> = ({
             <Mail className="w-4 h-4 text-slate-500" />
             <span>যোগাযোগ করুন</span>
           </a>
-
-          {onOpenShare && (
-            <button
-              id="header-share-btn"
-              onClick={onOpenShare}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-medium text-sm border border-slate-300 hover:border-slate-400 shadow-xs transition-all cursor-pointer"
-              title="ওয়েবসাইটের লিংক সবার মাঝে প্রকাশ ও শেয়ার করুন"
-            >
-              <Share2 className="w-4 h-4 text-red-600" />
-              <span>শেয়ার ও প্রকাশ করুন</span>
-            </button>
-          )}
         </div>
       </div>
     </header>

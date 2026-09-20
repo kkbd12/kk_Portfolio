@@ -10,6 +10,12 @@ import {
   resetToDefaultItems,
   isAdminAuthenticated,
   setAdminAuthenticated,
+  fetchPortfolioData,
+  addPortfolioItemRemote,
+  deletePortfolioItemRemote,
+  saveProfileImageRemote,
+  syncLocalToServer,
+  resetPortfolioRemote,
 } from './utils/storage';
 
 import { LanguageSelector } from './components/LanguageSelector';
@@ -26,7 +32,6 @@ import { AddressModal } from './components/AddressModal';
 import { AdminLoginModal } from './components/AdminLoginModal';
 import { AdminSettingsModal } from './components/AdminSettingsModal';
 import { AdminBar } from './components/AdminBar';
-import { SharePublishModal } from './components/SharePublishModal';
 
 import {
   Camera,
@@ -35,7 +40,6 @@ import {
   Filter,
   CheckCircle,
   Lock,
-  Share2,
 } from 'lucide-react';
 
 export default function App() {
@@ -54,7 +58,6 @@ export default function App() {
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState<boolean>(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   const [notification, setNotification] = useState<string>('');
 
   const [modalData, setModalData] = useState<ModalData>({
@@ -77,6 +80,34 @@ export default function App() {
     document.body.dir = 'ltr';
     document.title = t('appTitle') || 'Md. Ashaduzzaman Portfolio';
   }, [language, t]);
+
+  // Load from remote server and auto-sync any photos previously saved in localStorage
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        // First, check if this browser has any custom photos in localStorage and auto-sync them to server
+        const synced = await syncLocalToServer();
+        if (synced && isMounted && Array.isArray(synced.items) && synced.items.length > 0) {
+          setItems(synced.items);
+          if (synced.profileImage) setProfileImage(synced.profileImage);
+          return;
+        }
+
+        // Otherwise fetch latest data from server
+        const remoteData = await fetchPortfolioData();
+        if (remoteData && isMounted && Array.isArray(remoteData.items) && remoteData.items.length > 0) {
+          setItems(remoteData.items);
+          if (remoteData.profileImage) setProfileImage(remoteData.profileImage);
+        }
+      } catch (err) {
+        console.warn('Backend sync note:', err);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Show auto-expiring notification
   const showToast = (msg: string) => {
@@ -117,22 +148,36 @@ export default function App() {
   };
 
   // Profile photo change handler
-  const handleSaveProfilePhoto = (newUrl: string) => {
+  const handleSaveProfilePhoto = async (newUrl: string) => {
     setProfileImage(newUrl);
     saveProfileImage(newUrl);
     showToast(t('profilePhotoSaved') || 'প্রোফাইল ছবি সফলভাবে আপডেট হয়েছে!');
+
+    // Persist to server so other devices see the new profile photo
+    const serverPhoto = await saveProfileImageRemote(newUrl);
+    if (serverPhoto) {
+      setProfileImage(serverPhoto);
+    }
   };
 
   // Add new portfolio photo
-  const handleSaveNewPhoto = (newItem: PortfolioItem) => {
+  const handleSaveNewPhoto = async (newItem: PortfolioItem) => {
+    // 1. Optimistically update local view immediately
     const updated = [newItem, ...items];
     setItems(updated);
     savePortfolioItems(updated);
     showToast(t('photoSavedSuccess') || 'নতুন কাজের ছবি সফলভাবে যুক্ত হয়েছে!');
+
+    // 2. Persist to server backend so it is permanently visible from ANY device/browser
+    const serverItems = await addPortfolioItemRemote(newItem);
+    if (serverItems) {
+      setItems(serverItems);
+      showToast('ছবিটি ক্লাউড সার্ভারে সংরক্ষিত হয়েছে, এখন সারা বিশ্ব থেকে দৃশ্যমান!');
+    }
   };
 
   // Delete custom photo (Admin only)
-  const handleDeletePhoto = (id: string, e?: React.MouseEvent) => {
+  const handleDeletePhoto = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (!isAdmin) {
       requireAdmin(() => handleDeletePhoto(id));
@@ -148,18 +193,24 @@ export default function App() {
     setItems(updated);
     savePortfolioItems(updated);
     showToast('ছবি মুছে ফেলা হয়েছে।');
+
+    // Delete on server
+    const serverItems = await deletePortfolioItemRemote(id);
+    if (serverItems) {
+      setItems(serverItems);
+    }
   };
 
   // Reset to default gallery
   const handleResetDefaults = () => {
-    requireAdmin(() => {
+    requireAdmin(async () => {
       const confirmed = window.confirm(
         t('resetConfirm') ||
           'আপনি কি আগের ডিফল্ট গ্যালারিতে ফিরে যেতে চান? আপনার যোগ করা ছবিগুলো মুছে যাবে।'
       );
       if (!confirmed) return;
 
-      const defaults = resetToDefaultItems();
+      const defaults = await resetPortfolioRemote();
       setItems(defaults);
       setProfileImage(getSavedProfileImage());
       showToast('গ্যালারি ডিফল্ট অবস্থায় রিস্টোর করা হয়েছে।');
@@ -219,7 +270,6 @@ export default function App() {
             uploadButtonText={t('uploadPhotoBtn') || 'নতুন ছবি আপলোড করুন'}
             isAdmin={isAdmin}
             onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
-            onOpenShare={() => setIsShareModalOpen(true)}
           />
 
           {/* Admin Bar (Shows status & quick actions) */}
@@ -229,7 +279,6 @@ export default function App() {
             onLogout={handleAdminLogout}
             onOpenUpload={() => setIsUploadOpen(true)}
             onOpenSettings={() => setIsAdminSettingsOpen(true)}
-            onOpenShare={() => setIsShareModalOpen(true)}
           />
         </div>
 
@@ -244,7 +293,6 @@ export default function App() {
           totalPhotos={items.length}
           uploadButtonText={t('uploadPhotoBtn') || 'নতুন ছবি আপলোড করুন'}
           isAdmin={isAdmin}
-          onOpenShare={() => setIsShareModalOpen(true)}
         />
 
         {/* About Section */}
@@ -398,38 +446,11 @@ export default function App() {
           onOpenAddress={() => setIsAddressModalOpen(true)}
         />
 
-        {/* Share & Publish Callout Banner */}
-        <div className="p-6 rounded-3xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="space-y-1 text-center sm:text-left">
-            <h4 className="text-lg font-bold">
-              সারা বিশ্বের মানুষের সাথে এই পোর্টফোলিও শেয়ার করুন
-            </h4>
-            <p className="text-xs sm:text-sm text-red-100">
-              হোয়াটসঅ্যাপ, ফেসবুক বা যেকোনো মাধ্যমে এক ক্লিকেই লাইভ ওয়েবসাইট লিংক পৌঁছে দিন।
-            </p>
-          </div>
-          <button
-            id="footer-share-btn"
-            onClick={() => setIsShareModalOpen(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-red-600 hover:bg-red-50 active:scale-95 font-bold text-sm shadow-md transition-all cursor-pointer shrink-0"
-          >
-            <Share2 className="w-4 h-4 text-red-600" />
-            <span>সবার মাঝে শেয়ার করুন</span>
-          </button>
-        </div>
-
         {/* Footer */}
         <footer className="text-center py-6 text-slate-500 text-xs sm:text-sm border-t border-slate-200/60">
           <p>{t('footerText')}</p>
         </footer>
       </div>
-
-      {/* Share & Publish Modal */}
-      <SharePublishModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        onNotify={showToast}
-      />
 
       {/* Admin Login Modal */}
       <AdminLoginModal

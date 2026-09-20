@@ -105,6 +105,137 @@ export function resetToDefaultItems(): PortfolioItem[] {
 }
 
 /**
+ * Remote API functions to sync photos to the global backend server
+ * so any visitor worldwide can view custom uploaded photos.
+ */
+export async function fetchPortfolioData(): Promise<{ items: PortfolioItem[]; profileImage: string } | null> {
+  try {
+    const res = await fetch('/api/portfolio');
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.items)) {
+        savePortfolioItems(data.items);
+      }
+      if (data.profileImage) {
+        saveProfileImage(data.profileImage);
+      }
+      return data;
+    }
+  } catch (err) {
+    console.warn('Could not fetch from server, using local fallback cache:', err);
+  }
+  return null;
+}
+
+export async function addPortfolioItemRemote(item: PortfolioItem): Promise<PortfolioItem[] | null> {
+  try {
+    const res = await fetch('/api/portfolio/item', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.items) {
+        savePortfolioItems(data.items);
+        return data.items;
+      }
+    }
+  } catch (err) {
+    console.error('Error posting item to server:', err);
+  }
+  return null;
+}
+
+export async function deletePortfolioItemRemote(id: string): Promise<PortfolioItem[] | null> {
+  try {
+    const res = await fetch(`/api/portfolio/item/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.items) {
+        savePortfolioItems(data.items);
+        return data.items;
+      }
+    }
+  } catch (err) {
+    console.error('Error deleting item from server:', err);
+  }
+  return null;
+}
+
+export async function saveProfileImageRemote(imageSrc: string): Promise<string | null> {
+  try {
+    const res = await fetch('/api/portfolio/profile-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageSrc }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.profileImage) {
+        saveProfileImage(data.profileImage);
+        return data.profileImage;
+      }
+    }
+  } catch (err) {
+    console.error('Error saving profile image to server:', err);
+  }
+  return null;
+}
+
+export async function syncLocalToServer(): Promise<{ items: PortfolioItem[]; profileImage: string } | null> {
+  try {
+    const localItems = getSavedPortfolioItems();
+    const localProfileImage = getSavedProfileImage();
+    const hasCustom = localItems.some((it) => it.isCustom);
+    const hasCustomProfile = localProfileImage !== DEFAULT_PROFILE_IMAGE;
+
+    if (!hasCustom && !hasCustomProfile) {
+      return null;
+    }
+
+    const res = await fetch('/api/portfolio/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ localItems, localProfileImage }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.items)) {
+        savePortfolioItems(data.items);
+      }
+      if (data.profileImage) {
+        saveProfileImage(data.profileImage);
+      }
+      return data;
+    }
+  } catch (err) {
+    console.warn('Error during auto-sync to server:', err);
+  }
+  return null;
+}
+
+export async function resetPortfolioRemote(): Promise<PortfolioItem[]> {
+  try {
+    const res = await fetch('/api/portfolio/reset', { method: 'POST' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.items) {
+        savePortfolioItems(data.items);
+        saveProfileImage(data.profileImage || DEFAULT_PROFILE_IMAGE);
+        return data.items;
+      }
+    }
+  } catch (err) {
+    console.error('Error resetting server data:', err);
+  }
+  return resetToDefaultItems();
+}
+
+/**
  * Optimizes and resizes an uploaded image file to max width/height of 1200px
  * and compresses as JPEG so it fits smoothly in local storage.
  */
