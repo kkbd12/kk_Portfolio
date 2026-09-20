@@ -26,6 +26,7 @@ import { AddressModal } from './components/AddressModal';
 import { AdminLoginModal } from './components/AdminLoginModal';
 import { AdminSettingsModal } from './components/AdminSettingsModal';
 import { AdminBar } from './components/AdminBar';
+import { SharePublishModal } from './components/SharePublishModal';
 
 import {
   Camera,
@@ -34,6 +35,7 @@ import {
   Filter,
   CheckCircle,
   Lock,
+  Share2,
 } from 'lucide-react';
 
 export default function App() {
@@ -52,6 +54,7 @@ export default function App() {
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState<boolean>(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   const [notification, setNotification] = useState<string>('');
 
   const [modalData, setModalData] = useState<ModalData>({
@@ -216,6 +219,7 @@ export default function App() {
             uploadButtonText={t('uploadPhotoBtn') || 'নতুন ছবি আপলোড করুন'}
             isAdmin={isAdmin}
             onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
+            onOpenShare={() => setIsShareModalOpen(true)}
           />
 
           {/* Admin Bar (Shows status & quick actions) */}
@@ -225,6 +229,7 @@ export default function App() {
             onLogout={handleAdminLogout}
             onOpenUpload={() => setIsUploadOpen(true)}
             onOpenSettings={() => setIsAdminSettingsOpen(true)}
+            onOpenShare={() => setIsShareModalOpen(true)}
           />
         </div>
 
@@ -239,6 +244,7 @@ export default function App() {
           totalPhotos={items.length}
           uploadButtonText={t('uploadPhotoBtn') || 'নতুন ছবি আপলোড করুন'}
           isAdmin={isAdmin}
+          onOpenShare={() => setIsShareModalOpen(true)}
         />
 
         {/* About Section */}
@@ -392,11 +398,38 @@ export default function App() {
           onOpenAddress={() => setIsAddressModalOpen(true)}
         />
 
+        {/* Share & Publish Callout Banner */}
+        <div className="p-6 rounded-3xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="space-y-1 text-center sm:text-left">
+            <h4 className="text-lg font-bold">
+              সারা বিশ্বের মানুষের সাথে এই পোর্টফোলিও শেয়ার করুন
+            </h4>
+            <p className="text-xs sm:text-sm text-red-100">
+              হোয়াটসঅ্যাপ, ফেসবুক বা যেকোনো মাধ্যমে এক ক্লিকেই লাইভ ওয়েবসাইট লিংক পৌঁছে দিন।
+            </p>
+          </div>
+          <button
+            id="footer-share-btn"
+            onClick={() => setIsShareModalOpen(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-red-600 hover:bg-red-50 active:scale-95 font-bold text-sm shadow-md transition-all cursor-pointer shrink-0"
+          >
+            <Share2 className="w-4 h-4 text-red-600" />
+            <span>সবার মাঝে শেয়ার করুন</span>
+          </button>
+        </div>
+
         {/* Footer */}
         <footer className="text-center py-6 text-slate-500 text-xs sm:text-sm border-t border-slate-200/60">
           <p>{t('footerText')}</p>
         </footer>
       </div>
+
+      {/* Share & Publish Modal */}
+      <SharePublishModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        onNotify={showToast}
+      />
 
       {/* Admin Login Modal */}
       <AdminLoginModal

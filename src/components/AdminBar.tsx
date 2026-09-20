@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Lock, LogOut, KeyRound, Camera, PlusCircle } from 'lucide-react';
+import { ShieldCheck, Lock, LogOut, KeyRound, Camera, PlusCircle, Share2 } from 'lucide-react';
 
 interface AdminBarProps {
   isAdmin: boolean;
@@ -7,6 +7,7 @@ interface AdminBarProps {
   onLogout: () => void;
   onOpenUpload: () => void;
   onOpenSettings: () => void;
+  onOpenShare?: () => void;
 }
 
 export const AdminBar: React.FC<AdminBarProps> = ({
@@ -15,6 +16,7 @@ export const AdminBar: React.FC<AdminBarProps> = ({
   onLogout,
   onOpenUpload,
   onOpenSettings,
+  onOpenShare,
 }) => {
   if (!isAdmin) {
     return (
@@ -51,6 +53,17 @@ export const AdminBar: React.FC<AdminBarProps> = ({
       </div>
 
       <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+        {onOpenShare && (
+          <button
+            onClick={onOpenShare}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20 shadow-xs transition active:scale-95 cursor-pointer"
+            title="পোর্টফোলিও লিংক সবার মাঝে শেয়ার করুন"
+          >
+            <Share2 className="w-3.5 h-3.5 text-red-400" />
+            <span>সবার মাঝে শেয়ার</span>
+          </button>
+        )}
+
         <button
           onClick={onOpenUpload}
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer"
